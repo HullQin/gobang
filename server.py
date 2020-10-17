@@ -1,5 +1,5 @@
-# with open('index.html', 'rb') as fp:
-#     html = fp.read()
+with open('index.html', 'rb') as fp:
+    html = fp.read()
 
 house = {}
 
@@ -35,6 +35,4 @@ async def application(scope, receive, send):
         request = await receive()
         if request['type'] == 'http.request':
             await send({'type': 'http.response.start', 'status': 200})
-            with open('index.html', 'rb') as fp:
-                html = fp.read()
             await send({'type': 'http.response.body', 'body': html})

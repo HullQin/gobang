@@ -33,11 +33,6 @@
   let ws;
   const svg = document.getElementById('svg');
   const pieces = [];
-  const mark = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
-  mark.setAttribute('fill', 'red');
-  mark.setAttribute('width', '2');
-  mark.setAttribute('height', '2');
-  svg.appendChild(mark);
   for (let x = 0; x < 15; x++) {
     pieces.push([]);
     for (let y = 0; y < 15; y++) {
@@ -62,6 +57,7 @@
         if (!turn || piece.getAttribute('fill-opacity') === '1') return;
         piece.setAttribute('fill', black ? 'url(#black)' : 'url(#white)');
         piece.setAttribute('fill-opacity', '1');
+        setMark(_x, _y);
         if (online) {
           turn = false;
           ws.send(`${_x} ${_y}`);
@@ -72,7 +68,17 @@
       svg.appendChild(piece);
     }
   }
-
+  const mark = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+  mark.setAttribute('fill', 'red');
+  mark.setAttribute('width', '2');
+  mark.setAttribute('height', '2');
+  mark.setAttribute('opacity', '0');
+  svg.appendChild(mark);
+  const setMark = (x, y) => {
+    mark.setAttribute('x', (x * 10 - 71).toString());
+    mark.setAttribute('y', (y * 10 - 71).toString());
+    mark.setAttribute('opacity', '0.7');
+  };
   if (online) {
     ws = new WebSocket(`ws://${window.location.host}${room}`);
     ws.onmessage = (ev => {
@@ -86,6 +92,7 @@
         const piece = pieces[x][y];
         piece.setAttribute('fill', black ? 'url(#white)' : 'url(#black)');
         piece.setAttribute('fill-opacity', '1');
+        setMark(x, y);
         turn = true;
       }
     });
