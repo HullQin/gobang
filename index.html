@@ -17,6 +17,7 @@
       <stop offset="100%" style="stop-color:#ddd" />
     </radialGradient>
     <rect id="mark" x="-1" y="-1" width="2" height="2"/>
+    <circle id="piece" r="4.2"/>
   </defs>
   <path stroke="brown" stroke-width="0.5" fill="none" d="m-70,-70h140v140h-140zm10,0v140m10,0v-140m10,0v140m10,0v-140m10,0v140m10,0v-140m10,0v140m10,0v-140m10,0v140m10,0v-140m10,0v140m10,0v-140m10,0v140m10,-10h-140m0,-10h140m0,-10h-140m0,-10h140m0,-10h-140m0,-10h140m0,-10h-140m0,-10h140m0,-10h-140m0,-10h140m0,-10h-140m0,-10h140m0,-10h-140"/>
   <use xlink:href="#mark"/>
@@ -38,12 +39,12 @@
     for (let y = 0; y < 15; y++) {
       const _x = x;
       const _y = y;
-      const piece = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
+      const piece = document.createElementNS('http://www.w3.org/2000/svg', 'use');
       pieces[x].push(piece);
-      piece.setAttribute('cx', (x * 10 - 70).toString());
-      piece.setAttribute('cy', (y * 10 - 70).toString());
-      piece.setAttribute('r', '4.2')
+      piece.setAttribute('x', (x * 10 - 70).toString());
+      piece.setAttribute('y', (y * 10 - 70).toString());
       piece.setAttribute('fill-opacity', '0');
+      piece.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#piece');
       piece.addEventListener('mouseenter', () => {
         if (!turn || piece.getAttribute('fill-opacity') === '1') return;
         piece.setAttribute('fill', black ? 'url(#black)' : 'url(#white)');
