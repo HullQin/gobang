@@ -6,6 +6,41 @@
   <title>五子棋</title>
 </head>
 <body style="height: 100%; margin: 0; background: bisque">
+<style>
+  .message {
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    color: rgba(0,0,0,.85);
+    font-size: 14px;
+    font-variant: tabular-nums;
+    line-height: 1.5715;
+    list-style: none;
+    -webkit-font-feature-settings: "tnum";
+    font-feature-settings: "tnum";
+    position: fixed;
+    top: 8px;
+    left: 0;
+    z-index: 1010;
+    width: 100%;
+    pointer-events: none;
+    text-align: center;
+  }
+  .message > div {
+    padding: 6px;
+  }
+  .message > div > div {
+    display: inline-block;
+    padding: 12px 18px;
+    background: #fff;
+    border-radius: 2px;
+    -webkit-box-shadow: 0 3px 6px -4px rgba(0,0,0,.12), 0 6px 16px 0 rgba(0,0,0,.08), 0 9px 28px 8px rgba(0,0,0,.05);
+    box-shadow: 0 3px 6px -4px rgba(0,0,0,.12), 0 6px 16px 0 rgba(0,0,0,.08), 0 9px 28px 8px rgba(0,0,0,.05);
+    pointer-events: all;
+  }
+</style>
+<div id="message" class="message"></div>
 <svg id="svg" viewBox="-76,-76,152,152" style="height: 100%; width: 100%" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <radialGradient id="black">
@@ -31,6 +66,7 @@
   const online = room !== '/';
   let turn = !online;
   let black = true;
+  let winner = null;
   let ws;
   const svg = document.getElementById('svg');
   const pieces = [];
@@ -79,22 +115,154 @@
     mark.setAttribute('x', (x * 10 - 71).toString());
     mark.setAttribute('y', (y * 10 - 71).toString());
     mark.setAttribute('opacity', '0.7');
+    checkWinner(x, y);
+    if (winner) {
+      if (!online) {
+        Message(`游戏结束，${winner === 'black' ? '黑' : '白'}棋胜利！`);
+      } else {
+        if ((winner === 'black' && black) || (winner === 'white' && !black)) {
+          Message('你赢了！');
+        } else {
+          Message('你输了，下次加油！');
+        }
+      }
+    }
   };
+
+  const checkWinner = (x, y) => {
+    const color = pieces[x][y].getAttribute('fill');
+    if (x >= 4) {
+      let ok = true;
+      for (const i of [4, 3, 2, 1]) {
+        if (pieces[x - i][y].getAttribute('fill-opacity') !== '1' || pieces[x - i][y].getAttribute('fill') !== color) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) {
+        winner = color === 'url(#black)' ? 'black' : 'white';
+        return;
+      }
+      if (y >= 4) {
+        let ok = true;
+        for (const i of [4, 3, 2, 1]) {
+          if (pieces[x - i][y - i].getAttribute('fill-opacity') !== '1' || pieces[x - i][y - i].getAttribute('fill') !== color) {
+            ok = false;
+            break;
+          }
+        }
+        if (ok) {
+          winner = color === 'url(#black)' ? 'black' : 'white';
+          return;
+        }
+      }
+      if (y <= 10) {
+        let ok = true;
+        for (const i of [4, 3, 2, 1]) {
+          if (pieces[x - i][y + i].getAttribute('fill-opacity') !== '1' || pieces[x - i][y + i].getAttribute('fill') !== color) {
+            ok = false;
+            break;
+          }
+        }
+        if (ok) {
+          winner = color === 'url(#black)' ? 'black' : 'white';
+          return;
+        }
+      }
+    }
+    if (x <= 10) {
+      let ok = true;
+      for (const i of [4, 3, 2, 1]) {
+        if (pieces[x + i][y].getAttribute('fill-opacity') !== '1' || pieces[x + i][y].getAttribute('fill') !== color) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) {
+        winner = color === 'url(#black)' ? 'black' : 'white';
+        return;
+      }
+      if (y >= 4) {
+        let ok = true;
+        for (const i of [4, 3, 2, 1]) {
+          if (pieces[x + i][y - i].getAttribute('fill-opacity') !== '1' || pieces[x + i][y - i].getAttribute('fill') !== color) {
+            ok = false;
+            break;
+          }
+        }
+        if (ok) {
+          winner = color === 'url(#black)' ? 'black' : 'white';
+          return;
+        }
+      }
+      if (y <= 10) {
+        let ok = true;
+        for (const i of [4, 3, 2, 1]) {
+          if (pieces[x + i][y + i].getAttribute('fill-opacity') !== '1' || pieces[x + i][y + i].getAttribute('fill') !== color) {
+            ok = false;
+            break;
+          }
+        }
+        if (ok) {
+          winner = color === 'url(#black)' ? 'black' : 'white';
+          return;
+        }
+      }
+    }
+    if (y >= 4) {
+      let ok = true;
+      for (const i of [4, 3, 2, 1]) {
+        if (pieces[x][y - i].getAttribute('fill-opacity') !== '1' || pieces[x][y - i].getAttribute('fill') !== color) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) {
+        winner = color === 'url(#black)' ? 'black' : 'white';
+        return;
+      }
+    }
+    if (y <= 10) {
+      let ok = true;
+      for (const i of [4, 3, 2, 1]) {
+        if (pieces[x][y + i].getAttribute('fill-opacity') !== '1' || pieces[x][y + i].getAttribute('fill') !== color) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) {
+        winner = color === 'url(#black)' ? 'black' : 'white';
+      }
+    }
+  };
+
+  const messageDiv = document.getElementById('message');
+  const Message = (content) => {
+    const div = document.createElement('div');
+    div.innerHTML = `<div>${content}</div>`;
+    messageDiv.appendChild(div);
+    setTimeout(() => messageDiv.removeChild(div), 2500);
+  };
+
   if (online) {
     ws = new WebSocket(`ws://${window.location.host}${room}`);
+    ws.onerror = (_ => Message('房间人满了，换一个房间吧'));
     ws.onmessage = (ev => {
       const text = ev.data;
       if (text === 'black') {
         turn = true;
+        Message('您执黑棋，请下棋！');
       } else if (text === 'white') {
         black = false;
+        Message('您执白棋！');
       } else {
-        const [x, y] = text.split(' ');
+        const [x, y] = text.split(' ').map(i => Number(i));
         const piece = pieces[x][y];
         piece.setAttribute('fill', black ? 'url(#white)' : 'url(#black)');
         piece.setAttribute('fill-opacity', '1');
-        setMark(x, y);
         turn = true;
+        setMark(x, y);
+        if (!winner) Message('请下棋！');
       }
     });
   }
