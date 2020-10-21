@@ -117,6 +117,7 @@
     mark.setAttribute('opacity', '0.7');
     checkWinner(x, y);
     if (winner) {
+      turn = false;
       if (!online) {
         Message(`游戏结束，${winner === 'black' ? '黑' : '白'}棋胜利！`);
       } else {
