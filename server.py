@@ -34,7 +34,5 @@ async def application(scope, receive, send):
     elif scope['type'] == 'http':
         request = await receive()
         if request['type'] == 'http.request':
-            with open('index.html', 'rb') as fp:
-                html = fp.read()
             await send({'type': 'http.response.start', 'status': 200})
             await send({'type': 'http.response.body', 'body': html})
