@@ -2,43 +2,13 @@
 <html lang="en" style="height: 100%">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" href="data:;base64,=">
   <title>五子棋</title>
 </head>
 <body style="height: 100%; margin: 0; background: bisque">
 <style>
-  .message {
-    -webkit-box-sizing: border-box;
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    color: rgba(0,0,0,.85);
-    font-size: 14px;
-    font-variant: tabular-nums;
-    line-height: 1.5715;
-    list-style: none;
-    -webkit-font-feature-settings: "tnum";
-    font-feature-settings: "tnum";
-    position: fixed;
-    top: 8px;
-    left: 0;
-    z-index: 1010;
-    width: 100%;
-    pointer-events: none;
-    text-align: center;
-  }
-  .message > div {
-    padding: 6px;
-  }
-  .message > div > div {
-    display: inline-block;
-    padding: 12px 18px;
-    background: #fff;
-    border-radius: 2px;
-    -webkit-box-shadow: 0 3px 6px -4px rgba(0,0,0,.12), 0 6px 16px 0 rgba(0,0,0,.08), 0 9px 28px 8px rgba(0,0,0,.05);
-    box-shadow: 0 3px 6px -4px rgba(0,0,0,.12), 0 6px 16px 0 rgba(0,0,0,.08), 0 9px 28px 8px rgba(0,0,0,.05);
-    pointer-events: all;
-  }
+.message {-webkit-box-sizing: border-box;box-sizing: border-box;margin: 0;padding: 0;color: rgba(0,0,0,.85);font-size: 14px;font-variant: tabular-nums;line-height: 1.5715;list-style: none;-webkit-font-feature-settings: "tnum";font-feature-settings: "tnum";position: fixed;top: 8px;left: 0;z-index: 1010;width: 100%;pointer-events: none;text-align: center;}
+.message > div {padding: 6px;}
+.message > div > div {display: inline-block;padding: 12px 18px;background: #fff;border-radius: 2px;-webkit-box-shadow: 0 3px 6px -4px rgba(0,0,0,.12), 0 6px 16px 0 rgba(0,0,0,.08), 0 9px 28px 8px rgba(0,0,0,.05);box-shadow: 0 3px 6px -4px rgba(0,0,0,.12), 0 6px 16px 0 rgba(0,0,0,.08), 0 9px 28px 8px rgba(0,0,0,.05);pointer-events: all;}
 </style>
 <div id="message" class="message"></div>
 <svg id="svg" viewBox="-76,-76,152,152" style="height: 100%; width: 100%" xmlns="http://www.w3.org/2000/svg">
@@ -61,6 +31,9 @@
   <use xlink:href="#mark" x="-40" y="40"/>
   <use xlink:href="#mark" x="-40" y="-40"/>
 </svg>
+<div style="position: fixed; top: 0; left: 0;">
+  <button id="offline" onclick="setOffline();">转为离线模式</button>
+</div>
 <script>
   const svg = document.getElementById('svg');
   const pieces = [];
@@ -123,7 +96,6 @@
       }
     }
   };
-
   const checkWinner = (x, y) => {
     const color = pieces[x][y].getAttribute('fill');
     const potentialWinner = color === 'url(#black)' ? 'black' : 'white';
@@ -162,7 +134,6 @@
     }
     return null;
   };
-
   const messageDiv = document.getElementById('message');
   const Message = (content) => {
     const div = document.createElement('div');
@@ -170,7 +141,6 @@
     messageDiv.appendChild(div);
     setTimeout(() => messageDiv.removeChild(div), 3000);
   };
-
   const user = {};
   const initializeUser = () => {
     const localUserId = window.localStorage.getItem('user.id');
@@ -184,7 +154,6 @@
     user.name = window.localStorage.getItem('user.name') || '';
   };
   initializeUser();
-
   const game = {};
   let ws = null;
   const initializeGame = (room, preserve = false) => {
@@ -197,87 +166,92 @@
           }
         }
     }
+    if (!preserve) {
+      mark.setAttribute('opacity', '0');
+    }
     if (game.online) {
+      document.getElementById('offline').style.display = 'initial';
       game.black = true;
       game.waiting = true;
       game.winner = null;
-      if (!ws) {
-        ws = new WebSocket(`ws://${window.location.host}`);
-        ws.onopen = () => {
-          ws.send(JSON.stringify({type: 'EnterRoom', id: user.id, name: user.name, room: game.room}));
-        };
-        ws.onerror = (_ => {
-          ws = null;
+      ws = new WebSocket(`ws://${window.location.host}`);
+      ws.onopen = () => {
+        ws.send(JSON.stringify({type: 'EnterRoom', id: user.id, name: user.name, room: game.room}));
+      };
+      ws.onerror = (_ => {
+        console.error('error');
+      });
+      ws.onclose = (event => {
+        if (event.code !== 1000) {
           alert('连接已断开，将转换为单机模式！');
           setOffline();
-        });
-        ws.onmessage = (ev => {
-          const data = JSON.parse(ev.data);
-          const { type } = data;
-          if (type === 'InitializeRoomState') {
-            game.black = data.black;
-            game.visiting = data.visiting;
-            const droppedPieces = data.pieces;
-            let black = true;
-            for (const [x, y] of droppedPieces) {
-              pieces[x][y].setAttribute('fill', black ? 'url(#black)' : 'url(#white)');
-              pieces[x][y].setAttribute('fill-opacity', '1');
-              black = !black;
-            }
-            if (droppedPieces.length) {
-              dropPiece(...droppedPieces[droppedPieces.length - 1]);
-            }
-            if (!game.winner) {
-              if (!game.visiting && data.ready) {
-                if (game.black === black) {
-                  if (droppedPieces.length) {
-                    if (!game.winner) Message('欢迎回来，该您下棋了！');
-                  } else {
-                    Message('欢迎进入，您执黑棋，下棋后即开局，无法更换黑白和对手。');
-                  }
-                  game.waiting = false;
+        }
+      });
+      ws.onmessage = (ev => {
+        const data = JSON.parse(ev.data);
+        const { type } = data;
+        if (type === 'InitializeRoomState') {
+          game.black = data.black;
+          game.visiting = data.visiting;
+          const droppedPieces = data.pieces;
+          let black = true;
+          for (const [x, y] of droppedPieces) {
+            pieces[x][y].setAttribute('fill', black ? 'url(#black)' : 'url(#white)');
+            pieces[x][y].setAttribute('fill-opacity', '1');
+            black = !black;
+          }
+          if (droppedPieces.length) {
+            dropPiece(...droppedPieces[droppedPieces.length - 1]);
+          }
+          if (!game.winner) {
+            if (!game.visiting && data.ready) {
+              if (game.black === black) {
+                if (droppedPieces.length) {
+                  if (!game.winner) Message('欢迎回来，该您下棋了！');
                 } else {
-                  Message(`欢迎进入，请等待对手下棋。`);
+                  Message('欢迎进入，您执黑棋，下棋后即开局，无法更换黑白和对手。');
                 }
-              } else if (!droppedPieces.length && !data.ready) {
-                Message(`欢迎进入，等待对手中。`);
+                game.waiting = false;
+              } else {
+                Message(`欢迎进入，请等待对手下棋。`);
               }
-            }
-          } else if (type === 'AddPlayer') {
-            if (!game.visiting && data.ready && game.black === true) {
-              Message('您执黑棋，下棋后即开局，无法更换黑白和对手。');
-              game.waiting = false;
-            }
-          } else if (type === 'ChangeBlack') {
-            if (window.confirm('对方希望与您交换黑白棋，是否同意？')) {
-              ws.send(JSON.stringify({type: 'AcceptChange'}));
-            } else {
-              ws.send(JSON.stringify({type: 'RejectChange'}));
-            }
-          } else if (type === 'DropPiece') {
-            const { x, y } = data;
-            const piece = pieces[x][y];
-            piece.setAttribute('fill', game.black ? 'url(#white)' : 'url(#black)');
-            piece.setAttribute('fill-opacity', '1');
-            dropPiece(x, y);
-            if (game.visiting) game.black = !game.black;
-            if (!game.visiting && !game.winner) {
-              game.waiting = false;
-              Message('请下棋！');
+            } else if (!droppedPieces.length && !data.ready) {
+              Message(`欢迎进入，等待对手中。`);
             }
           }
-        });
-      } else {
-        ws.send(JSON.stringify({type: 'ChangeRoom', id: user.id, name: user.name, room: game.room}));
-      }
+        } else if (type === 'AddPlayer') {
+          if (!game.visiting && data.ready && game.black === true) {
+            Message('您执黑棋，下棋后即开局，无法更换黑白和对手。');
+            game.waiting = false;
+          }
+        } else if (type === 'ChangeBlack') {
+          if (window.confirm('对方希望与您交换黑白棋，是否同意？')) {
+            ws.send(JSON.stringify({type: 'AcceptChange'}));
+          } else {
+            ws.send(JSON.stringify({type: 'RejectChange'}));
+          }
+        } else if (type === 'DropPiece') {
+          const { x, y } = data;
+          const piece = pieces[x][y];
+          piece.setAttribute('fill', game.black ? 'url(#white)' : 'url(#black)');
+          piece.setAttribute('fill-opacity', '1');
+          dropPiece(x, y);
+          if (game.visiting) game.black = !game.black;
+          if (!game.visiting && !game.winner) {
+            game.waiting = false;
+            Message('请下棋！');
+          }
+        }
+      });
     } else {
+      document.getElementById('offline').style.display = 'none';
       if (!preserve) {
         game.black = true;
         game.waiting = false;
         game.winner = null;
       } else {
         if (!game.winner) {
-          game.black = game.black && !game.waiting;
+          game.black = game.black ? !game.waiting : game.waiting;
           game.waiting = false;
         }
       }
@@ -289,16 +263,12 @@
   };
   initializeGame(window.location.pathname.substr(1));
   window.onpopstate = (event) => {
-    initializeGame(event.target.location.pathname.substr(1), event.state.preserve);
+    initializeGame(event.target.location.pathname.substr(1));
   };
-  const changeRoom = (room) => {
-    history.pushState(null, null, `/${room}`);
-    initializeGame(room);
-  };
-
   const setOffline = () => {
-    history.pushState({preserve: true}, null, '/');
-    ws = null;
+    window.history.pushState({preserve: true}, null, '/');
+    initializeGame('', true);
+    Message('切换至离线模式，可自由模拟棋局，按浏览器返回键可回到房间。')
   };
 </script>
 </body>

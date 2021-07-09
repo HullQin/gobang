@@ -59,20 +59,10 @@ async def application(scope, receive, send):
         while True:
             event = await receive()
             if event['type'] == 'websocket.disconnect':
-                print(len(room['sends']))
                 room['sends'].remove(send)
-                print(len(room['sends']))
                 break
             data = json.loads(event['text'])
-            if data['type'] == 'ChangeRoom':
-                pass
-            elif data['type'] == 'ApplyChange':
-                pass
-            elif data['type'] == 'AcceptChange':
-                pass
-            elif data['type'] == 'RejectChange':
-                pass
-            elif data['type'] == 'DropPiece':
+            if data['type'] == 'DropPiece':
                 room['pieces'].append((data['x'], data['y']))
                 for _send in room['sends']:
                     if _send == send:
