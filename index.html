@@ -193,6 +193,7 @@
         if (type === 'InitializeRoomState') {
           game.black = data.black;
           game.visiting = data.visiting;
+          game.ready = data.ready;
           const droppedPieces = data.pieces;
           let black = true;
           for (const [x, y] of droppedPieces) {
@@ -221,14 +222,9 @@
           }
         } else if (type === 'AddPlayer') {
           if (!game.visiting && data.ready && game.black === true) {
+            game.ready = true;
             Message('您执黑棋，下棋后即开局，无法更换黑白和对手。');
             game.waiting = false;
-          }
-        } else if (type === 'ChangeBlack') {
-          if (window.confirm('对方希望与您交换黑白棋，是否同意？')) {
-            ws.send(JSON.stringify({type: 'AcceptChange'}));
-          } else {
-            ws.send(JSON.stringify({type: 'RejectChange'}));
           }
         } else if (type === 'DropPiece') {
           const { x, y } = data;
@@ -251,7 +247,7 @@
         game.winner = null;
       } else {
         if (!game.winner) {
-          game.black = game.black ? !game.waiting : game.waiting;
+          game.black = !game.ready || (game.black ? !game.waiting : game.waiting);
           game.waiting = false;
         }
       }
