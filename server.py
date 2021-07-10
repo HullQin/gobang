@@ -60,6 +60,8 @@ async def application(scope, receive, send):
             event = await receive()
             if event['type'] == 'websocket.disconnect':
                 room['sends'].remove(send)
+                if len(room['pieces']) == 0 and len(room['sends']) == 0:
+                    del house[room_id]
                 break
             data = json.loads(event['text'])
             if data['type'] == 'DropPiece':
