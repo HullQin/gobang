@@ -32,7 +32,7 @@
   <use xlink:href="#mark" x="-40" y="-40"/>
 </svg>
 <div style="position: fixed; top: 0; left: 0;">
-  <button id="offline" onclick="setOffline();">转为离线模式</button>
+  <button id="offline" onclick="game.online ? setOffline() : changeRoom(window.prompt('请输入房间号，开启联机对战。第一进入房间者执黑，第二进入房间者执白，其他人可观战。'))">转为离线模式</button>
 </div>
 <script>
   const svg = document.getElementById('svg');
@@ -170,7 +170,7 @@
       mark.setAttribute('opacity', '0');
     }
     if (game.online) {
-      document.getElementById('offline').style.display = 'initial';
+      document.getElementById('offline').innerText = '转为离线模式';
       game.black = true;
       game.waiting = true;
       game.winner = null;
@@ -240,7 +240,7 @@
         }
       });
     } else {
-      document.getElementById('offline').style.display = 'none';
+      document.getElementById('offline').innerText = '开始联机对战';
       if (!preserve) {
         game.black = true;
         game.waiting = false;
@@ -265,6 +265,15 @@
     window.history.pushState({preserve: true}, null, '/');
     initializeGame('', true);
     Message('切换至离线模式，可自由模拟棋局，按浏览器返回键可回到房间。')
+  };
+  const changeRoom = (room) => {
+    room = room.replace(/ /g, '');
+    if (!room) {
+      alert('请输入房间号，空格会被忽略，房间号不能为空');
+    } else {
+      window.history.pushState(null, null, `/${room}`);
+      initializeGame(room);
+    }
   };
 </script>
 </body>
