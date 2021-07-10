@@ -23,27 +23,30 @@ async def application(scope, receive, send):
             house[room_id] = {
                 'black': None,
                 'white': None,
-                'visitors': [],
                 'pieces': [],
                 'sends': [],
+                'users': [],
             }
         room = house[room_id]
-        room['sends'].append(send)
         old = False
         if room['black'] == user_id or room['white'] == user_id:
             old = True
+            if user_id in room['users']:
+                old_send = room['sends'][room['users'].index(user_id)]
+                room['sends'].remove(old_send)
+                room['users'].remove(user_id)
+                await old_send({'type': 'websocket.close', 'code': 4000})
         else:
             if room['black'] is None:
                 room['black'] = user_id
             elif room['white'] is None:
                 room['white'] = user_id
-            else:
-                room['visitors'].append(user_id)
         visiting = room['black'] != user_id and room['white'] != user_id
+        room['sends'].append(send)
+        room['users'].append(user_id)
         await send({'type': 'websocket.send', 'text': json.dumps({
             'type': 'InitializeRoomState',
             'pieces': room['pieces'],
-            'visitors': len(room['visitors']),
             'visiting': visiting,
             'black': room['black'] == user_id if not visiting else bool(len(room['pieces']) % 2),
             'ready': bool(room['black'] and room['white']),
@@ -59,9 +62,11 @@ async def application(scope, receive, send):
         while True:
             event = await receive()
             if event['type'] == 'websocket.disconnect':
-                room['sends'].remove(send)
-                if len(room['pieces']) == 0 and len(room['sends']) == 0:
-                    del house[room_id]
+                if send in room['sends']:
+                    room['sends'].remove(send)
+                    room['users'].remove(user_id)
+                    if len(room['pieces']) == 0 and len(room['sends']) == 0:
+                        del house[room_id]
                 break
             data = json.loads(event['text'])
             if data['type'] == 'DropPiece':

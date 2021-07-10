@@ -184,7 +184,11 @@
       });
       ws.onclose = (event => {
         if (event.code !== 1000) {
-          alert('连接已断开，将转换为单机模式！');
+          if (event.code === 4000) {
+            alert('您已在新的浏览器窗口中进入了该房间，本页面将转换为单机模式！');
+          } else {
+            alert('连接已断开，将转换为单机模式！');
+          }
           setOffline();
         }
       });
