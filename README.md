@@ -4,7 +4,7 @@
 
 ## 体验地址
 
-https://gobang.hullqin.cn/
+https://gobang.game.hullqin.cn/
 
 ## 如何部署
 
