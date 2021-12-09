@@ -1,2 +1,2 @@
-.idea/
-config.sh
+.idea
+__pycache__
